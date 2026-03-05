@@ -1,0 +1,6 @@
+# Claude Code internal files
+.claude/
+
+# Windows executables and batch files (local tooling, not project files)
+*.exe
+*.bat
