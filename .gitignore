@@ -4,3 +4,9 @@
 # Windows executables and batch files (local tooling, not project files)
 *.exe
 *.bat
+
+node_modules
+dist
+.env
+.env.local
+.env*.local

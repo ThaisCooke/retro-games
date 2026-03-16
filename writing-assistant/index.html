@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Writing Assistant</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --surface3: #191c2a;
+      --border: #2e3350;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --accent3: #f06292;
+      --text: #e8eaf6;
+      --muted: #7986cb;
+      --success: #66bb6a;
+      --warn: #ffa726;
+      --radius: 10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ═══════════ HEADER ═══════════ */
+    header {
+      padding: 0 1.5rem;
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .nav {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.5rem;
+    }
+
+    .nav-btn {
+      padding: 0.35rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .nav-btn:hover { color: var(--text); background: var(--surface2); }
+
+    .nav-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .header-info {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .vault-counts {
+      display: flex;
+      gap: 0.8rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .vault-count-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+
+    /* ═══════════ VIEWS ═══════════ */
+    .view { display: none; flex: 1; overflow: hidden; }
+    .view.active { display: flex; }
+
+    /* ═══════════ VAULT VIEW ═══════════ */
+    #vaultView {
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .vault-tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      gap: 0;
+      flex-shrink: 0;
+    }
+
+    .vault-tab {
+      padding: 0.75rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .vault-tab:hover { color: var(--text); }
+
+    .vault-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .vault-tab .count {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.1rem 0.45rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .vault-tab.active .count {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .vault-content {
+      flex: 1;
+      display: none;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    .vault-content.active { display: grid; grid-template-columns: 340px 1fr; }
+
+    /* Left: article list */
+    .vault-list-col {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface3);
+    }
+
+    .vault-list-header {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+
+    .vault-list-header span {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .vault-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .vault-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .vault-item:hover { border-color: var(--accent); }
+    .vault-item.selected { border-color: var(--accent); background: #1e2138; }
+
+    .vault-item-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+      padding-right: 1.5rem;
+      line-height: 1.3;
+    }
+
+    .vault-item-meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .vault-item-delete {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.35rem;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+    }
+
+    .vault-item:hover .vault-item-delete { opacity: 1; }
+    .vault-item-delete:hover { color: var(--accent3); }
+
+    .vault-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 2rem 1rem;
+      line-height: 1.7;
+    }
+
+    /* Right: add / edit form */
+    .vault-form-col {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .vault-form-header {
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .vault-form-header span {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .vault-form-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      padding: 1.2rem;
+      overflow-y: auto;
+    }
+
+    input.vault-title-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.7rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input.vault-title-input:focus { border-color: var(--accent); }
+    input.vault-title-input::placeholder { color: var(--muted); font-weight: 400; }
+
+    textarea.vault-content-input {
+      flex: 1;
+      min-height: 320px;
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.85rem;
+      line-height: 1.8;
+      padding: 0.9rem 1rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: 'Georgia', serif;
+    }
+
+    textarea.vault-content-input:focus { border-color: var(--accent); }
+    textarea.vault-content-input::placeholder { color: var(--muted); font-family: 'Segoe UI', sans-serif; }
+
+    .vault-form-footer {
+      padding: 0.85rem 1.2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .wc-info {
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    /* ═══════════ WRITE VIEW ═══════════ */
+    #writeView {
+      display: none;
+    }
+
+    #writeView.active {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1rem;
+    }
+
+    .sidebar-section h2 {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+      font-weight: 700;
+    }
+
+    .vault-source-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.55rem 0.75rem;
+      font-size: 0.78rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .vault-source-label { color: var(--text); }
+
+    .vault-source-count {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    .vault-hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 0.35rem;
+    }
+
+    input.topic-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.83rem;
+      padding: 0.55rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input.topic-input:focus { border-color: var(--accent); }
+    input.topic-input::placeholder { color: var(--muted); }
+
+    .format-tabs {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.38rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.73rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Main area ── */
+    .main {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .panel {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel:nth-child(even) { border-right: none; }
+    .panel:nth-child(3), .panel:nth-child(4) { border-bottom: none; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.9rem;
+    }
+
+    /* ── Suggestion cards ── */
+    .suggestion-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 0.95rem;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .suggestion-card:hover { border-color: var(--accent); background: #1e2138; }
+    .suggestion-card.selected { border-color: var(--accent); background: #1e2138; }
+
+    .card-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent2);
+      margin-bottom: 0.28rem;
+      font-weight: 700;
+    }
+
+    .card-title {
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.28rem;
+      line-height: 1.4;
+    }
+
+    .card-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+
+    .card-tag {
+      display: inline-block;
+      font-size: 0.62rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.12rem 0.38rem;
+      color: var(--muted);
+      margin-top: 0.45rem;
+      margin-right: 0.28rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      padding: 2rem 0.5rem;
+    }
+
+    .empty-state .icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+
+    /* ── Draft / Refine / Output ── */
+    textarea.draft-area, textarea.refine-area {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.87rem;
+      line-height: 1.85;
+      resize: none;
+      outline: none;
+      font-family: 'Georgia', serif;
+    }
+
+    textarea.draft-area::placeholder,
+    textarea.refine-area::placeholder { color: var(--muted); font-family: 'Segoe UI', sans-serif; font-size: 0.8rem; }
+
+    .output-body {
+      font-size: 0.88rem;
+      line-height: 1.9;
+      font-family: 'Georgia', serif;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .output-placeholder { color: var(--muted); font-size: 0.78rem; font-family: 'Segoe UI', sans-serif; }
+
+    .refine-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      padding: 0.55rem 0.9rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ── Status bar ── */
+    .statusbar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 0.35rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .statusbar .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      margin-right: 0.35rem;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-full { width: 100%; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      font-size: 0.73rem;
+      padding: 0.32rem 0.65rem;
+    }
+
+    .btn-danger { background: transparent; color: var(--accent3); border: 1px solid var(--accent3); }
+
+    /* ── Tone badges ── */
+    .tone-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      padding: 0.12rem 0.42rem;
+      border-radius: 20px;
+      font-weight: 600;
+      margin-left: 0.35rem;
+    }
+
+    .tone-personal { background: #3a2060; color: #b39ddb; }
+    .tone-analytical { background: #0d3349; color: var(--accent2); }
+    .tone-inspirational { background: #3e1a24; color: var(--accent3); }
+    .tone-practical { background: #1a3320; color: var(--success); }
+    .tone-funny { background: #3b2800; color: #ffd54f; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ═══════════ IDEAS VIEW ═══════════ */
+    #ideasView {
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+    #ideasView.active { display: flex; }
+
+    .ideas-layout {
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ideas-config-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.65rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .ideas-add-bar {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .ideas-add-input {
+      flex: 1;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .ideas-add-input:focus { border-color: var(--accent); }
+
+    .idea-card-wrapper {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .idea-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .idea-card-body { flex: 1; }
+
+    .idea-text {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 0.3rem;
+    }
+
+    .idea-meta {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .idea-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .idea-draft-panel {
+      margin-top: 6px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+    }
+
+    .idea-draft-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+      background: var(--surface3);
+      color: var(--text);
+      font-family: inherit;
+      line-height: 1.55;
+      transition: border-color 0.15s;
+    }
+    .idea-draft-textarea:focus { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header>
+  <div class="logo">✦ Writing Assistant</div>
+  <nav class="nav">
+    <button class="nav-btn active" id="navVault" onclick="switchView('vault')">Vault</button>
+    <button class="nav-btn" id="navWrite" onclick="switchView('write')">Write</button>
+    <button class="nav-btn" id="navIdeas" onclick="switchView('ideas')">Ideas</button>
+  </nav>
+  <div class="vault-counts" id="headerCounts">
+    <span>Posts: <span class="vault-count-badge" id="hcShort">0</span></span>
+    <span>Newsletters: <span class="vault-count-badge" id="hcLong">0</span></span>
+  </div>
+  <div class="header-info" id="headerInfo">Offline · No APIs</div>
+</header>
+
+<!-- ═══════════ VAULT VIEW ═══════════ -->
+<div class="view active" id="vaultView">
+
+  <div class="vault-tabs">
+    <div class="vault-tab active" id="vtabShort" onclick="switchVaultTab('short')">
+      Short Format — Posts
+      <span class="count" id="shortTabCount">0</span>
+    </div>
+    <div class="vault-tab" id="vtabLong" onclick="switchVaultTab('long')">
+      Long Format — Newsletters
+      <span class="count" id="longTabCount">0</span>
+    </div>
+  </div>
+
+  <!-- Short tab content -->
+  <div class="vault-content active" id="vcShort">
+    <div class="vault-list-col">
+      <div class="vault-list-header">
+        <span>Saved Posts</span>
+        <button class="btn btn-ghost" onclick="newVaultEntry('short')">+ Add Post</button>
+      </div>
+      <div class="vault-list" id="shortList">
+        <div class="vault-empty">No posts yet.<br>Click <strong>+ Add Post</strong> to start building your vault.</div>
+      </div>
+    </div>
+    <div class="vault-form-col">
+      <div class="vault-form-header">
+        <span id="shortFormLabel">New Post</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-ghost" onclick="clearVaultForm('short')">Clear</button>
+          <button class="btn btn-primary" onclick="saveVaultEntry('short')">Save to Vault</button>
+        </div>
+      </div>
+      <div class="vault-form-body">
+        <input class="vault-title-input" id="shortTitle" type="text" placeholder="Post title (optional)…">
+        <textarea class="vault-content-input" id="shortContent"
+          placeholder="Paste or write your post here…&#10;&#10;LinkedIn posts, Twitter threads, short essays — anything under ~500 words counts as short format."></textarea>
+      </div>
+      <div class="vault-form-footer">
+        <button class="btn btn-ghost" onclick="clearVaultForm('short')">Clear form</button>
+        <span class="wc-info" id="shortWc">0 words</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Long tab content -->
+  <div class="vault-content" id="vcLong">
+    <div class="vault-list-col">
+      <div class="vault-list-header">
+        <span>Saved Newsletters</span>
+        <button class="btn btn-ghost" onclick="newVaultEntry('long')">+ Add Newsletter</button>
+      </div>
+      <div class="vault-list" id="longList">
+        <div class="vault-empty">No newsletters yet.<br>Click <strong>+ Add Newsletter</strong> to start building your vault.</div>
+      </div>
+    </div>
+    <div class="vault-form-col">
+      <div class="vault-form-header">
+        <span id="longFormLabel">New Newsletter</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-ghost" onclick="clearVaultForm('long')">Clear</button>
+          <button class="btn btn-primary" onclick="saveVaultEntry('long')">Save to Vault</button>
+        </div>
+      </div>
+      <div class="vault-form-body">
+        <input class="vault-title-input" id="longTitle" type="text" placeholder="Newsletter title (optional)…">
+        <textarea class="vault-content-input" id="longContent"
+          placeholder="Paste or write your newsletter here…&#10;&#10;Long-form essays, Substack issues, email newsletters — anything 500+ words counts as long format."></textarea>
+      </div>
+      <div class="vault-form-footer">
+        <button class="btn btn-ghost" onclick="clearVaultForm('long')">Clear form</button>
+        <span class="wc-info" id="longWc">0 words</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ WRITE VIEW ═══════════ -->
+<div class="view" id="writeView">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <h2>Vault Source</h2>
+      <div class="vault-source-row">
+        <span class="vault-source-label">Posts</span>
+        <span class="vault-source-count" id="sideShortCount">0 articles</span>
+      </div>
+      <div class="vault-source-row">
+        <span class="vault-source-label">Newsletters</span>
+        <span class="vault-source-count" id="sideLongCount">0 articles</span>
+      </div>
+      <p class="vault-hint">Suggestions pull from your vault. Add more articles there for better results.</p>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Format</h2>
+      <div class="format-tabs">
+        <div class="tab active" id="tabShort" onclick="setFormat('short')">Post</div>
+        <div class="tab" id="tabLong" onclick="setFormat('long')">Newsletter</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Seed Topic (optional)</h2>
+      <input class="topic-input" id="topicInput" type="text" placeholder="e.g. burnout, AI, creativity…">
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Tone Override</h2>
+      <button class="btn btn-ghost" id="funnyToneBtn" onclick="toggleFunnyTone()" title="Write with wit and sarcasm instead of your usual voice">😏 Funny / Sarcasm</button>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="btn btn-primary btn-full" onclick="generateSuggestions()">Generate Suggestions</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Refine Style</h2>
+      <div style="display:flex; flex-wrap:wrap; gap:0.38rem;">
+        <button class="btn btn-ghost" onclick="applyRefinement('shorter')">Shorter</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('longer')">Longer</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('casual')">More Casual</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('formal')">More Formal</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('punchier')">Punchier</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('storytelling')">Storytelling</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('hooks')">Add Hooks</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('cta')">Add CTA</button>
+        <button class="btn btn-ghost" onclick="applyRefinement('funny')" style="color:#ffd54f;border-color:#3b2800">😏 Make Funny</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="btn btn-success btn-full" onclick="publishOutput()">Export to Output</button>
+    </div>
+
+  </aside>
+
+  <!-- Main panels -->
+  <main class="main">
+    <div class="panels">
+
+      <!-- Panel 1: Suggestions -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Themes & Directions</span>
+          <button class="btn btn-ghost" onclick="generateSuggestions()">Refresh</button>
+        </div>
+        <div class="panel-body" id="suggestionsPanel">
+          <div class="empty-state">
+            <div class="icon">💡</div>
+            Fill your vault with past writing, then hit <strong>Generate Suggestions</strong>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Draft -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Draft</span>
+          <div style="display:flex;gap:0.4rem">
+            <button class="btn btn-ghost" onclick="clearDraft()">Clear</button>
+            <button class="btn btn-ghost" onclick="copyDraft()">Copy</button>
+          </div>
+        </div>
+        <div class="panel-body" style="padding:1rem;display:flex;flex-direction:column;">
+          <textarea class="draft-area" id="draftArea"
+            placeholder="Click a suggestion to seed a draft here, or write freely…"></textarea>
+        </div>
+      </div>
+
+      <!-- Panel 3: Refinement -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Refinement Notes</span>
+        </div>
+        <div class="refine-toolbar" id="refineHints" style="display:none"></div>
+        <div class="panel-body" style="padding:1rem;display:flex;flex-direction:column;">
+          <textarea class="refine-area" id="refineArea"
+            placeholder="Write your own refinement instructions here — e.g. 'cut the third paragraph', 'add a personal story', 'make the hook stronger'…&#10;&#10;Or use the quick-style buttons in the sidebar."></textarea>
+        </div>
+      </div>
+
+      <!-- Panel 4: Output -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Final Output</span>
+          <div style="display:flex;gap:0.4rem">
+            <button class="btn btn-ghost" onclick="copyOutput()">Copy</button>
+            <button class="btn btn-ghost" onclick="clearOutput()">Clear</button>
+          </div>
+        </div>
+        <div class="panel-body" id="outputPanel">
+          <p class="output-placeholder">Your final post or article will appear here after you click <strong>Export to Output</strong>.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="statusbar">
+      <span><span class="dot"></span><span id="statusMsg">Ready</span></span>
+      <span id="formatLabel">Format: Post</span>
+      <span id="wordCountLabel">Draft: 0 words</span>
+      <span id="outputWordCount">Output: 0 words</span>
+    </div>
+  </main>
+
+</div>
+
+<!-- ═══════════ IDEAS VIEW ═══════════ -->
+<div class="view" id="ideasView">
+  <div class="ideas-layout">
+
+    <!-- Config bar -->
+    <div class="ideas-config-bar">
+      <span style="font-size:0.75rem;color:var(--muted);white-space:nowrap">Anthropic API Key</span>
+      <input type="password" id="apiKeyInput" class="topic-input" style="flex:1;max-width:320px" placeholder="sk-ant-…">
+      <button class="btn btn-ghost" onclick="saveApiKey()">Save key</button>
+    </div>
+
+    <!-- Add idea -->
+    <div class="ideas-add-bar">
+      <textarea id="newIdeaText" class="ideas-add-input" placeholder="Jot down an idea for a LinkedIn post…" rows="2"></textarea>
+      <button class="btn btn-primary" onclick="addIdea()">Add Idea</button>
+    </div>
+
+    <!-- Ideas list -->
+    <div id="ideasList">
+      <div class="vault-empty">No ideas yet. Add one above.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════ STATE ═══════════
+let currentFormat = 'short';
+let currentVaultTab = 'short';
+let selectedCard = null;
+let editingId = { short: null, long: null };
+let toneOverride = null;
+
+// vault: { short: [{id, title, content, date}], long: [...] }
+let vault = loadVault();
+
+// ═══════════ PERSISTENCE ═══════════
+function loadVault() {
+  try {
+    const raw = localStorage.getItem('wa_vault');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { short: [], long: [] };
+}
+
+function saveVault() {
+  localStorage.setItem('wa_vault', JSON.stringify(vault));
+  updateCounts();
+}
+
+// ═══════════ NAVIGATION ═══════════
+function switchView(view) {
+  document.getElementById('vaultView').classList.toggle('active', view === 'vault');
+  document.getElementById('writeView').classList.toggle('active', view === 'write');
+  document.getElementById('ideasView').classList.toggle('active', view === 'ideas');
+  document.getElementById('navVault').classList.toggle('active', view === 'vault');
+  document.getElementById('navWrite').classList.toggle('active', view === 'write');
+  document.getElementById('navIdeas').classList.toggle('active', view === 'ideas');
+  if (view === 'write') updateSideCounts();
+  if (view === 'ideas') loadApiKeyInput();
+}
+
+// ═══════════ VAULT TABS ═══════════
+function switchVaultTab(tab) {
+  currentVaultTab = tab;
+  document.getElementById('vtabShort').classList.toggle('active', tab === 'short');
+  document.getElementById('vtabLong').classList.toggle('active', tab === 'long');
+  document.getElementById('vcShort').classList.toggle('active', tab === 'short');
+  document.getElementById('vcLong').classList.toggle('active', tab === 'long');
+}
+
+// ═══════════ VAULT CRUD ═══════════
+function newVaultEntry(type) {
+  editingId[type] = null;
+  document.getElementById(type === 'short' ? 'shortTitle' : 'longTitle').value = '';
+  document.getElementById(type === 'short' ? 'shortContent' : 'longContent').value = '';
+  document.getElementById(type === 'short' ? 'shortFormLabel' : 'longFormLabel').textContent =
+    type === 'short' ? 'New Post' : 'New Newsletter';
+  updateVaultFormWc(type);
+  document.querySelectorAll(`#${type === 'short' ? 'shortList' : 'longList'} .vault-item`)
+    .forEach(el => el.classList.remove('selected'));
+}
+
+function saveVaultEntry(type) {
+  const titleEl = document.getElementById(type === 'short' ? 'shortTitle' : 'longTitle');
+  const contentEl = document.getElementById(type === 'short' ? 'shortContent' : 'longContent');
+  const content = contentEl.value.trim();
+  if (!content) { flashStatus('Nothing to save — add some content first.'); return; }
+
+  const title = titleEl.value.trim() ||
+    content.split(/\s+/).slice(0, 6).join(' ') + '…';
+
+  const id = editingId[type];
+
+  if (id) {
+    // update existing
+    const idx = vault[type].findIndex(e => e.id === id);
+    if (idx !== -1) {
+      vault[type][idx].title = title;
+      vault[type][idx].content = content;
+      vault[type][idx].date = new Date().toISOString();
+    }
+  } else {
+    vault[type].push({
+      id: Date.now().toString(),
+      title,
+      content,
+      date: new Date().toISOString(),
+    });
+  }
+
+  saveVault();
+  renderVaultList(type);
+  flashStatus(id ? 'Updated.' : 'Saved to vault!');
+  newVaultEntry(type);
+}
+
+function deleteVaultEntry(type, id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this entry?')) return;
+  vault[type] = vault[type].filter(e => e.id !== id);
+  saveVault();
+  renderVaultList(type);
+  if (editingId[type] === id) newVaultEntry(type);
+}
+
+function loadVaultEntry(type, id) {
+  const entry = vault[type].find(e => e.id === id);
+  if (!entry) return;
+  editingId[type] = id;
+  document.getElementById(type === 'short' ? 'shortTitle' : 'longTitle').value = entry.title;
+  document.getElementById(type === 'short' ? 'shortContent' : 'longContent').value = entry.content;
+  document.getElementById(type === 'short' ? 'shortFormLabel' : 'longFormLabel').textContent = 'Editing: ' + entry.title;
+  updateVaultFormWc(type);
+
+  document.querySelectorAll(`#${type === 'short' ? 'shortList' : 'longList'} .vault-item`)
+    .forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+}
+
+function clearVaultForm(type) {
+  newVaultEntry(type);
+}
+
+// ═══════════ RENDER VAULT LIST ═══════════
+function renderVaultList(type) {
+  const listEl = document.getElementById(type === 'short' ? 'shortList' : 'longList');
+  const items = vault[type];
+
+  if (items.length === 0) {
+    listEl.innerHTML = `<div class="vault-empty">No ${type === 'short' ? 'posts' : 'newsletters'} yet.<br>Click <strong>+ Add ${type === 'short' ? 'Post' : 'Newsletter'}</strong> to start building your vault.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = '';
+  items.slice().reverse().forEach(entry => {
+    const wc = entry.content.trim().split(/\s+/).filter(Boolean).length;
+    const div = document.createElement('div');
+    div.className = 'vault-item';
+    div.dataset.id = entry.id;
+    div.innerHTML = `
+      <button class="vault-item-delete" title="Delete" onclick="deleteVaultEntry('${type}', '${entry.id}', event)">✕</button>
+      <div class="vault-item-title">${esc(entry.title)}</div>
+      <div class="vault-item-meta">${wc} words · ${fmtDate(entry.date)}</div>
+    `;
+    div.onclick = () => loadVaultEntry(type, entry.id);
+    if (editingId[type] === entry.id) div.classList.add('selected');
+    listEl.appendChild(div);
+  });
+}
+
+// ═══════════ COUNTS ═══════════
+function updateCounts() {
+  const s = vault.short.length;
+  const l = vault.long.length;
+  document.getElementById('shortTabCount').textContent = s;
+  document.getElementById('longTabCount').textContent = l;
+  document.getElementById('hcShort').textContent = s;
+  document.getElementById('hcLong').textContent = l;
+}
+
+function updateSideCounts() {
+  document.getElementById('sideShortCount').textContent = vault.short.length + ' article' + (vault.short.length !== 1 ? 's' : '');
+  document.getElementById('sideLongCount').textContent = vault.long.length + ' article' + (vault.long.length !== 1 ? 's' : '');
+}
+
+// ═══════════ VAULT WORD COUNT ═══════════
+function updateVaultFormWc(type) {
+  const el = document.getElementById(type === 'short' ? 'shortContent' : 'longContent');
+  const wcEl = document.getElementById(type === 'short' ? 'shortWc' : 'longWc');
+  const wc = el.value.trim().split(/\s+/).filter(Boolean).length;
+  wcEl.textContent = wc + ' words';
+}
+
+document.getElementById('shortContent').addEventListener('input', () => updateVaultFormWc('short'));
+document.getElementById('longContent').addEventListener('input', () => updateVaultFormWc('long'));
+
+// ═══════════ WRITE — FORMAT ═══════════
+function setFormat(fmt) {
+  currentFormat = fmt;
+  document.getElementById('tabShort').classList.toggle('active', fmt === 'short');
+  document.getElementById('tabLong').classList.toggle('active', fmt === 'long');
+  document.getElementById('formatLabel').textContent = 'Format: ' + (fmt === 'short' ? 'Post' : 'Newsletter');
+}
+
+// ═══════════ TEXT ANALYSIS ═══════════
+function getAllVaultText(type) {
+  return vault[type].map(e => e.content).join('\n\n');
+}
+
+function extractKeywords(text) {
+  const stop = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','from','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','this','that','these','those','it','its','i','you','we','they','he','she','my','your','our','their','me','him','her','us','them','so','if','as','not','no','can','then','than','about','into','just','more','also','all','up','out','what','how','when','where','who','which','there','here','some','any','each','very','too','much','many','own','same','most','after','before','over','again','further','once','only','both','few','other','such','while','because','though','since','through','between','really','think','know','people','thing','things','make','want','need','going','like','time','way','work','even','still','never','always','every','something','anything','nothing','everything','get','got','give','see','look','take','come','go','say','said','tell','told','feel','felt','found','find']);
+  const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+  const freq = {};
+  words.forEach(w => { if (!stop.has(w)) freq[w] = (freq[w] || 0) + 1; });
+  return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 25).map(e => e[0]);
+}
+
+function detectTone(text) {
+  const t = text.toLowerCase();
+  const scores = {
+    personal: (t.match(/\bi\b|\bmy\b|\bme\b|\bwe\b|\bour\b|\bmyself\b/g) || []).length,
+    analytical: (t.match(/\bdata\b|\bresearch\b|\bstudy\b|\banalysis\b|\bstatistic\b|\btrend\b|\bpercent\b|\bevidence\b|\bfact\b/g) || []).length,
+    inspirational: (t.match(/\bdream\b|\bpossible\b|\bbelieve\b|\bhope\b|\bchange\b|\bpower\b|\bpotential\b|\btransform\b|\bimpact\b|\bpurpose\b/g) || []).length,
+    practical: (t.match(/\bstep\b|\btip\b|\bhow\b|\bguide\b|\btool\b|\bstrategy\b|\bprocess\b|\bmethod\b|\bframework\b|\bsystem\b/g) || []).length,
+  };
+  return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function detectThemes(keywords) {
+  const map = {
+    'Technology & AI': ['ai','technology','tech','digital','software','tool','app','code','data','machine','automation','algorithm','platform','innovation','model'],
+    'Creativity': ['creative','creativity','idea','design','art','write','writing','story','content','imagine','inspiration','craft','voice','narrative'],
+    'Career & Work': ['work','job','career','professional','skill','leadership','team','business','company','manage','growth','success','industry','client'],
+    'Personal Growth': ['learn','growth','mindset','habit','goal','self','improve','reflect','change','journey','progress','better','develop','evolve'],
+    'Productivity': ['productive','productivity','focus','time','priority','plan','organize','efficient','output','result','manage','routine'],
+    'Mental Health & Balance': ['burnout','stress','balance','health','wellbeing','rest','break','boundary','energy','mental','emotion','anxiety','overwhelm'],
+    'Community & Connection': ['community','connection','network','people','relationship','together','share','support','culture','belong','audience','reader'],
+    'Future & Trends': ['future','trend','shift','next','emerging','world','society','evolve','prediction','direction','landscape'],
+  };
+  const matched = {};
+  keywords.forEach(kw => {
+    for (const [theme, words] of Object.entries(map)) {
+      if (words.some(w => kw.includes(w) || w.includes(kw))) {
+        matched[theme] = (matched[theme] || 0) + 1;
+      }
+    }
+  });
+  const results = Object.entries(matched).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => e[0]);
+  if (results.length === 0) results.push('Personal Growth', 'Technology & AI');
+  return results;
+}
+
+// ═══════════ SUGGESTIONS ═══════════
+const shortAngles = [
+  { label: 'Contrarian take', fn: (t, kw) => `The uncomfortable truth about ${kw[0] || t.toLowerCase()} nobody is talking about` },
+  { label: 'Personal story', fn: (t, kw) => `What ${kw[0] || 'my biggest failure'} taught me about ${kw[1] || t.toLowerCase()}` },
+  { label: 'Hot take', fn: (t, kw) => `Unpopular opinion: most ${kw[0] || 'advice'} about ${t.toLowerCase()} is wrong` },
+  { label: 'Observation', fn: (t, kw) => `I've been noticing a pattern with ${t.toLowerCase()} — and it's worth talking about` },
+  { label: 'Lesson learned', fn: (t, kw) => `A lesson about ${kw[1] || t.toLowerCase()} I learned the hard way` },
+  { label: 'Myth bust', fn: (t, kw) => `Stop believing this myth about ${kw[0] || t.toLowerCase()}` },
+  { label: 'Question hook', fn: (t, kw) => `What if everything you thought about ${t.toLowerCase()} was slightly off?` },
+  { label: 'List post', fn: (t, kw) => `3 things I wish I knew about ${t.toLowerCase()} earlier` },
+];
+
+const funnyShortAngles = [
+  { label: 'Sarcastic take', fn: (t, kw) => `Oh sure, ${kw[0] || t.toLowerCase()} is totally overrated — said no one who actually tried it` },
+  { label: 'Brutal honesty', fn: (t, kw) => `I tried to be good at ${t.toLowerCase()}. Here's everything that went wrong` },
+  { label: 'Rant post', fn: (t, kw) => `A completely unhinged rant about ${kw[0] || t.toLowerCase()} that is 100% justified` },
+  { label: 'Self-roast', fn: (t, kw) => `The embarrassing way I misunderstood ${kw[0] || t.toLowerCase()} for way too long` },
+  { label: 'Fake advice', fn: (t, kw) => `How to absolutely ruin your ${t.toLowerCase()} in 5 easy steps` },
+  { label: 'Confession', fn: (t, kw) => `I have a confession: I've been doing ${kw[0] || t.toLowerCase()} completely wrong` },
+  { label: 'Unsolicited guide', fn: (t, kw) => `Nobody asked, but here's my full guide to ${t.toLowerCase()}` },
+  { label: 'Conspiracy', fn: (t, kw) => `${esc(kw[0] ? kw[0].charAt(0).toUpperCase() + kw[0].slice(1) : t)} is a scam and I have receipts` },
+];
+
+const longAngles = [
+  { label: 'Deep dive', fn: (t, kw) => `The full picture on ${t.toLowerCase()}: what it is, why it matters, and what to do next` },
+  { label: 'Personal essay', fn: (t, kw) => `How ${kw[0] || t.toLowerCase()} changed the way I work — and what I'd do differently` },
+  { label: 'Framework', fn: (t, kw) => `A practical framework for navigating ${t.toLowerCase()} without burning out` },
+  { label: 'Trend analysis', fn: (t, kw) => `Where ${t.toLowerCase()} is heading — and how to stay ahead of the curve` },
+  { label: 'Case study', fn: (t, kw) => `What ${kw[0] || 'a year of'} paying attention to ${t.toLowerCase()} taught me` },
+  { label: 'Letter format', fn: (t, kw) => `A letter to anyone struggling with ${kw[0] || t.toLowerCase()}` },
+  { label: 'Roundup', fn: (t, kw) => `Everything I've learned about ${t.toLowerCase()} — distilled into one piece` },
+  { label: 'Before & after', fn: (t, kw) => `My ${t.toLowerCase()} before and after I changed one thing` },
+];
+
+const funnyLongAngles = [
+  { label: 'Comedic essay', fn: (t, kw) => `Everything I got wrong about ${t.toLowerCase()} — a cautionary tale with footnotes` },
+  { label: 'Satirical guide', fn: (t, kw) => `The definitive guide to ${t.toLowerCase()} for people who clearly haven't read a guide before` },
+  { label: 'Dramatic retelling', fn: (t, kw) => `The completely unnecessary drama of how I finally figured out ${kw[0] || t.toLowerCase()}` },
+  { label: 'Sarcastic analysis', fn: (t, kw) => `Why ${t.toLowerCase()} is the solution to everything, according to absolutely everyone on the internet` },
+  { label: 'Honest autopsy', fn: (t, kw) => `A full post-mortem of my ${kw[0] || t.toLowerCase()} era — cause of death: overconfidence` },
+  { label: 'Unsolicited opinion', fn: (t, kw) => `My completely unsolicited take on ${t.toLowerCase()} that you needed to hear anyway` },
+  { label: 'Roast format', fn: (t, kw) => `Roasting the ${kw[0] || t.toLowerCase()} advice I used to give — it deserved it` },
+  { label: 'Villain arc', fn: (t, kw) => `I tried doing ${t.toLowerCase()} the "right" way. Here's my villain origin story` },
+];
+
+const toneDesc = {
+  personal: 'first-person, reflective, conversational',
+  analytical: 'evidence-based, structured, data-driven',
+  inspirational: 'uplifting, bold, motivational',
+  practical: 'actionable, step-by-step, solution-focused',
+  funny: 'witty, sarcastic, self-aware',
+};
+
+const toneCls = { personal: 'tone-personal', analytical: 'tone-analytical', inspirational: 'tone-inspirational', practical: 'tone-practical', funny: 'tone-funny' };
+
+function toggleFunnyTone() {
+  toneOverride = toneOverride === 'funny' ? null : 'funny';
+  const btn = document.getElementById('funnyToneBtn');
+  btn.style.background = toneOverride === 'funny' ? '#3b2800' : '';
+  btn.style.color = toneOverride === 'funny' ? '#ffd54f' : '';
+  btn.style.borderColor = toneOverride === 'funny' ? '#ffd54f' : '';
+}
+
+function generateSuggestions() {
+  const seed = document.getElementById('topicInput').value.trim();
+  const panel = document.getElementById('suggestionsPanel');
+  panel.innerHTML = '';
+
+  const newsletters = vault.long;
+
+  // Empty vault state
+  if (newsletters.length === 0) {
+    panel.innerHTML = '<div class="card-desc" style="padding:1rem;opacity:0.6">No newsletters in your vault yet. Add some in the Vault tab to unlock theme analysis.</div>';
+    return;
+  }
+
+  // All 8 predefined themes
+  const allThemes = [
+    'Technology & AI', 'Creativity', 'Career & Work', 'Personal Growth',
+    'Productivity', 'Mental Health & Balance', 'Community & Connection', 'Future & Trends'
+  ];
+
+  // Analyze each newsletter individually
+  const perEntry = newsletters.map(entry => {
+    const kw = extractKeywords(entry.content);
+    const themes = detectThemes(kw);
+    return { id: entry.id, title: entry.title, date: entry.date, themes, keywords: kw };
+  });
+
+  const totalNewsletters = newsletters.length;
+
+  // Aggregate coverage per theme
+  const themeStats = allThemes.map(theme => {
+    const touching = perEntry.filter(e => e.themes.includes(theme));
+    const count = touching.length;
+    const allKw = touching.flatMap(e => e.keywords);
+    const kwFreq = {};
+    allKw.forEach(k => { kwFreq[k] = (kwFreq[k] || 0) + 1; });
+    const topKw = Object.entries(kwFreq).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => e[0]);
+    const lastDate = touching.length
+      ? touching.map(e => e.date).sort().reverse()[0]
+      : null;
+    const coverageRatio = count / totalNewsletters;
+    // Opportunity: never used > rarely used > often used
+    const opportunityScore = count === 0 ? 3 : count <= 2 ? 2 : 1;
+    return { theme, count, topKw, lastDate, coverageRatio, opportunityScore };
+  });
+
+  // Seed boost: bump opportunityScore for themes matching seed words
+  if (seed) {
+    const seedWords = seed.toLowerCase().split(/\s+/);
+    themeStats.forEach(ts => {
+      if (seedWords.some(sw => ts.theme.toLowerCase().includes(sw) || ts.topKw.some(k => k.includes(sw)))) {
+        ts.opportunityScore += 1;
+      }
+    });
+  }
+
+  // Sort by opportunity desc, then by coverage asc as tiebreaker
+  themeStats.sort((a, b) => b.opportunityScore - a.opportunityScore || a.count - b.count);
+
+  const top6 = themeStats.slice(0, 6);
+  const angles = toneOverride === 'funny' ? funnyLongAngles : longAngles;
+
+  // Detect overall tone from all newsletters combined (overridden if funny mode)
+  const allText = newsletters.map(e => e.content).join('\n\n');
+  const tone = toneOverride || detectTone(allText);
+
+  top6.forEach(({ theme, count, topKw, lastDate, opportunityScore }) => {
+    const coverageBadge = count === 0 ? 'Never written' : `${count} newsletter${count > 1 ? 's' : ''}`;
+    const opportunityLabel = count === 0 ? 'Fresh territory' : count <= 2 ? 'Revisit &amp; deepen' : 'Well-covered';
+    const opportunityColor = count === 0 ? 'var(--accent)' : count <= 2 ? 'var(--accent2)' : '#666';
+    const angle = shuffleSlice(angles, 1)[0];
+    const title = angle.fn(theme, topKw);
+    const kwTags = topKw.slice(0, 3).map(k => `<span class="card-tag">${esc(k)}</span>`).join('');
+    const lastUsedStr = lastDate ? ` · Last: ${new Date(lastDate).toLocaleDateString()}` : '';
+
+    const card = document.createElement('div');
+    card.className = 'suggestion-card';
+    card.innerHTML = `
+      <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>${esc(theme)}</span>
+        <span style="font-size:0.65rem;color:${opportunityColor};font-weight:700;text-transform:uppercase;letter-spacing:0.05em">${opportunityLabel}</span>
+      </div>
+      <div class="card-title">${esc(title)}</div>
+      <div class="card-desc" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:0.25rem">
+        <span style="font-size:0.7rem;opacity:0.7">${esc(coverageBadge)}${lastUsedStr}</span>
+        <span class="tone-badge ${toneCls[tone]}">${tone}</span>
+      </div>
+      <div>${kwTags}</div>
+    `;
+    card.onclick = () => selectCard(card, title, theme, angle.label, tone, topKw);
+    panel.appendChild(card);
+  });
+}
+
+function shuffleSlice(arr, n) {
+  const c = [...arr];
+  for (let i = c.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [c[i], c[j]] = [c[j], c[i]];
+  }
+  return c.slice(0, n);
+}
+
+function selectCard(card, title, theme, angleLabel, tone, keywords) {
+  document.querySelectorAll('.suggestion-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedCard = { title, theme, angleLabel, tone, keywords };
+  const draftArea = document.getElementById('draftArea');
+  draftArea.value = buildStarter(title, theme, tone, keywords);
+  updateWordCount();
+}
+
+function buildStarter(title, theme, tone, keywords) {
+  const kw = keywords[0] || theme.toLowerCase();
+  const kw2 = keywords[1] || 'learning';
+  const starters = {
+    personal: `${title}\n\nI've been thinking about ${kw} a lot lately.\n\nHere's what I've noticed:\n\n[Your personal observation or story here]\n\nThe thing is, ${kw2} changed everything once I started paying attention to…\n\n[Continue your story]\n\nWhat this means for you:\n\n[Your takeaway or call-to-action]`,
+    analytical: `${title}\n\nLet's look at what we actually know about ${kw}.\n\nHere's what stands out:\n\n[Key insight or finding]\n\nWhy does this matter? Because…\n\n[Your analysis]\n\nWhat you can do with this:\n\n[Practical next steps]`,
+    inspirational: `${title}\n\nWhat if ${kw} wasn't a problem to solve, but a signal to listen to?\n\nHere's what I've come to believe:\n\n[Your bold idea or belief]\n\nThe shift happens when…\n\n[The turning point]\n\nStart here:\n\n[Your actionable inspiration]`,
+    practical: `${title}\n\nIf you want to get better at ${kw}, here's where to start:\n\n1. [First step]\n\n2. [Second step]\n\n3. [Third step]\n\nThe most important thing:\n\n[Core insight]\n\nTry this today:\n\n[One concrete action]`,
+    funny: `${title}\n\nOkay, let's talk about ${kw}. For real this time.\n\nHere's the situation:\n\n[Set up the absurd premise or the embarrassing truth]\n\nAnd naturally, my response was completely reasonable:\n\n[Your hilariously unreasonable response]\n\nThe plot twist nobody asked for:\n\n[The thing you actually learned from this disaster]\n\nWhat you should do instead of what I did:\n\n[The actual useful takeaway, delivered with a smirk]`,
+  };
+  return starters[tone] || starters.personal;
+}
+
+// ═══════════ REFINEMENT ═══════════
+function applyRefinement(type) {
+  const draft = document.getElementById('draftArea').value.trim();
+  const ra = document.getElementById('refineArea');
+  if (!draft) { ra.value = 'Write or paste your draft first, then use these tools.'; return; }
+  const hints = {
+    shorter: 'Shorten it. Cut redundant sentences. Keep the core idea and the most memorable line. Aim for half the length.',
+    longer: 'Expand it. Add a personal anecdote, a concrete example, or a deeper explanation of the main idea.',
+    casual: 'Make it more casual and conversational. Use contractions, shorter sentences, and direct address ("you").',
+    formal: 'Make it more formal and polished. Remove slang, structure your points clearly, and strengthen your arguments.',
+    punchier: 'Make the opening punchier. Lead with the most interesting sentence. Cut the warm-up.',
+    storytelling: 'Add a personal story or scene-setting. Start with a specific moment, not a general statement.',
+    hooks: 'Add a strong hook at the beginning and a cliffhanger or tension point in the middle.',
+    cta: 'Add a clear call-to-action at the end. What should the reader do, think, or feel next?',
+    funny: 'Rewrite with wit and sarcasm. Lean into self-deprecating humour, absurd comparisons, and dry observations. Make the reader laugh before you make them think.',
+  };
+  ra.value = (ra.value ? ra.value + '\n\n' : '') + '→ ' + hints[type];
+  const bar = document.getElementById('refineHints');
+  bar.style.display = 'flex';
+  bar.innerHTML = `<span style="font-size:0.7rem;color:var(--accent2)">Queued: <strong>${type}</strong> — revise your draft using the note above, then export.</span>`;
+}
+
+// ═══════════ DRAFT ═══════════
+function clearDraft() {
+  if (confirm('Clear the draft?')) { document.getElementById('draftArea').value = ''; updateWordCount(); }
+}
+
+function copyDraft() {
+  const t = document.getElementById('draftArea').value;
+  if (t) navigator.clipboard.writeText(t).then(() => flashStatus('Draft copied!'));
+}
+
+document.getElementById('draftArea').addEventListener('input', updateWordCount);
+
+function updateWordCount() {
+  const wc = document.getElementById('draftArea').value.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('wordCountLabel').textContent = `Draft: ${wc} word${wc !== 1 ? 's' : ''}`;
+}
+
+// ═══════════ OUTPUT ═══════════
+function publishOutput() {
+  let output = document.getElementById('draftArea').value.trim();
+  const refine = document.getElementById('refineArea').value.trim();
+  const panel = document.getElementById('outputPanel');
+  if (!output) { panel.innerHTML = '<p class="output-placeholder">Write something in the Draft panel first.</p>'; return; }
+
+  if (refine.includes('shorter') || refine.includes('half the length')) {
+    const sents = output.split(/(?<=[.!?])\s+/);
+    output = sents.filter((_, i) => i % 2 === 0).join(' ');
+  }
+  if (refine.includes('casual') || refine.includes('conversational')) {
+    output = output.replace(/\bdo not\b/g,"don't").replace(/\bcannot\b/g,"can't").replace(/\bwill not\b/g,"won't").replace(/\bI am\b/g,"I'm").replace(/\bIt is\b/g,"It's");
+  }
+  if (refine.includes('formal')) {
+    output = output.replace(/\bdon't\b/g,"do not").replace(/\bcan't\b/g,"cannot").replace(/\bwon't\b/g,"will not").replace(/\bI'm\b/g,"I am");
+  }
+
+  const div = document.createElement('div');
+  div.className = 'output-body';
+  div.textContent = output;
+  panel.innerHTML = '';
+  panel.appendChild(div);
+  const wc = output.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('outputWordCount').textContent = `Output: ${wc} words`;
+}
+
+function copyOutput() {
+  const el = document.querySelector('.output-body');
+  if (el) navigator.clipboard.writeText(el.textContent).then(() => flashStatus('Output copied!'));
+}
+
+function clearOutput() {
+  document.getElementById('outputPanel').innerHTML = '<p class="output-placeholder">Your final post or article will appear here after you click <strong>Export to Output</strong>.</p>';
+  document.getElementById('outputWordCount').textContent = 'Output: 0 words';
+}
+
+// ═══════════ IDEAS — PERSISTENCE ═══════════
+let ideas = loadIdeas();
+let draftStates = {}; // { [id]: { open, loading, error, draft } }
+
+function loadIdeas() {
+  try {
+    const raw = localStorage.getItem('wa_ideas');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+function saveIdeas() {
+  localStorage.setItem('wa_ideas', JSON.stringify(ideas));
+}
+
+// ═══════════ IDEAS — API KEY ═══════════
+function loadApiKeyInput() {
+  const key = localStorage.getItem('wa_anthropic_key') || '';
+  const el = document.getElementById('apiKeyInput');
+  if (el && key) el.value = key;
+  updateHeaderInfo();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('wa_anthropic_key', key);
+    flashStatus('API key saved.');
+    updateHeaderInfo();
+  } else {
+    flashStatus('Enter a key first.');
+  }
+}
+
+function updateHeaderInfo() {
+  const el = document.getElementById('headerInfo');
+  if (!el) return;
+  const key = localStorage.getItem('wa_anthropic_key') || '';
+  el.textContent = key ? 'API key set' : 'Offline · No APIs';
+}
+
+// ═══════════ IDEAS — ANTHROPIC API ═══════════
+async function draftLinkedInPost(ideaText) {
+  const apiKey = localStorage.getItem('wa_anthropic_key') || '';
+  if (!apiKey) throw new Error('No API key saved. Enter your Anthropic API key at the top of the Ideas view.');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: `You are a LinkedIn ghostwriter. Write authentic, direct, first-person LinkedIn posts.
+
+Structure:
+1. Strong opening hook (first line grabs attention)
+2. Body: a clear insight, lesson, or short story
+3. Simple call to action at the end
+
+Rules: under 3000 characters, no corporate fluff, no excessive hashtags (max 3), no emojis unless they fit naturally, conversational but professional.`,
+      messages: [{ role: 'user', content: `Write a LinkedIn post about: ${ideaText}` }],
+    }),
+  });
+
+  if (!res.ok) {
+    let msg = `API error ${res.status}`;
+    try { const err = await res.json(); msg = err.error?.message || msg; } catch {}
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// ═══════════ IDEAS — CRUD ═══════════
+function addIdea() {
+  const el = document.getElementById('newIdeaText');
+  const text = el.value.trim();
+  if (!text) return;
+  ideas.push({ id: Date.now().toString(), text, date: new Date().toISOString() });
+  saveIdeas();
+  el.value = '';
+  renderIdeas();
+}
+
+function deleteIdea(id) {
+  if (!confirm('Delete this idea?')) return;
+  ideas = ideas.filter(i => i.id !== id);
+  delete draftStates[id];
+  saveIdeas();
+  renderIdeas();
+}
+
+// ═══════════ IDEAS — DRAFT HANDLER ═══════════
+async function handleDraft(id) {
+  const idea = ideas.find(i => i.id === id);
+  if (!idea) return;
+
+  draftStates[id] = { open: true, loading: true, error: '', draft: '' };
+  updateDraftPanel(id);
+
+  try {
+    const text = await draftLinkedInPost(idea.text);
+    draftStates[id] = { open: true, loading: false, error: '', draft: text };
+  } catch (err) {
+    draftStates[id] = { open: true, loading: false, error: err.message, draft: '' };
+  }
+  updateDraftPanel(id);
+}
+
+// ═══════════ IDEAS — RENDER ═══════════
+function renderIdeas() {
+  const list = document.getElementById('ideasList');
+  if (!list) return;
+
+  if (ideas.length === 0) {
+    list.innerHTML = '<div class="vault-empty">No ideas yet. Add one above.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  ideas.slice().reverse().forEach(idea => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'idea-card-wrapper';
+    wrapper.dataset.ideaId = idea.id;
+
+    const card = document.createElement('div');
+    card.className = 'idea-card';
+
+    const body = document.createElement('div');
+    body.className = 'idea-card-body';
+
+    const text = document.createElement('div');
+    text.className = 'idea-text';
+    text.textContent = idea.text;
+
+    const meta = document.createElement('div');
+    meta.className = 'idea-meta';
+    meta.textContent = fmtDate(idea.date);
+
+    body.appendChild(text);
+    body.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'idea-actions';
+
+    const draftBtn = document.createElement('button');
+    draftBtn.className = 'btn btn-ghost';
+    draftBtn.textContent = 'Draft post';
+    draftBtn.onclick = () => handleDraft(idea.id);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger';
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = () => deleteIdea(idea.id);
+
+    actions.appendChild(draftBtn);
+    actions.appendChild(delBtn);
+    card.appendChild(body);
+    card.appendChild(actions);
+    wrapper.appendChild(card);
+    list.appendChild(wrapper);
+
+    if (draftStates[idea.id] && draftStates[idea.id].open) {
+      updateDraftPanel(idea.id);
+    }
+  });
+}
+
+function updateDraftPanel(id) {
+  const wrapper = document.querySelector(`[data-idea-id="${id}"]`);
+  if (!wrapper) return;
+
+  const ds = draftStates[id] || {};
+  let panel = wrapper.querySelector('.idea-draft-panel');
+
+  if (!ds.open) {
+    if (panel) panel.remove();
+    return;
+  }
+
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.className = 'idea-draft-panel';
+    wrapper.appendChild(panel);
+  }
+
+  panel.innerHTML = '';
+
+  if (ds.loading) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:0.8rem;color:var(--muted)';
+    msg.textContent = 'Drafting post…';
+    panel.appendChild(msg);
+  } else if (ds.error) {
+    const err = document.createElement('div');
+    err.style.cssText = 'font-size:0.8rem;color:var(--accent3);background:#3e1a24;padding:8px 10px;border-radius:6px';
+    err.textContent = ds.error;
+    panel.appendChild(err);
+  } else if (ds.draft) {
+    const ta = document.createElement('textarea');
+    ta.className = 'idea-draft-textarea';
+    ta.rows = 8;
+    ta.value = ds.draft;
+    ta.addEventListener('input', e => { draftStates[id].draft = e.target.value; });
+    panel.appendChild(ta);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn-ghost';
+    copyBtn.textContent = 'Copy to clipboard';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(draftStates[id].draft).then(() => flashStatus('Copied!'));
+    };
+
+    const regenBtn = document.createElement('button');
+    regenBtn.className = 'btn btn-ghost';
+    regenBtn.textContent = 'Regenerate';
+    regenBtn.onclick = () => handleDraft(id);
+
+    btnRow.appendChild(copyBtn);
+    btnRow.appendChild(regenBtn);
+    panel.appendChild(btnRow);
+  }
+}
+
+// Allow Ctrl+Enter to add idea
+document.addEventListener('keydown', function(e) {
+  if (e.target.id === 'newIdeaText' && (e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    addIdea();
+  }
+});
+
+// ═══════════ UTILS ═══════════
+function flashStatus(msg) {
+  const el = document.getElementById('statusMsg');
+  const orig = el.textContent;
+  el.textContent = msg;
+  setTimeout(() => el.textContent = orig, 2000);
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function esc(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════ INIT ═══════════
+renderVaultList('short');
+renderVaultList('long');
+updateCounts();
+renderIdeas();
+updateHeaderInfo();
+</script>
+</body>
+</html>

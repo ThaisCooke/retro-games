@@ -10,12 +10,14 @@ This is a collection of self-contained retro arcade games. Each game is a single
 
 Each game is fully self-contained in one HTML file: markup, styles, and game logic all in a single `<script>` tag. There is no shared code between games.
 
-- `spaceshooter.html` — Space Invaders clone using HTML5 Canvas with pixel-perfect rendering (`image-rendering: pixelated`). Game loop uses `requestAnimationFrame`. Logical resolution is 480×640, scaled up via CSS.
-- `tictactoe.html` — Two-player Tic-Tac-Toe with pure CSS/DOM rendering (no canvas).
+Games live in the `retro-games/` folder:
+
+- `retro-games/spaceshooter.html` — Space Invaders clone using HTML5 Canvas with pixel-perfect rendering (`image-rendering: pixelated`). Game loop uses `requestAnimationFrame`. Logical resolution is 480×640, scaled up via CSS.
+- `retro-games/tictactoe.html` — Two-player Tic-Tac-Toe with pure CSS/DOM rendering (no canvas).
 
 ## Adding a New Game
 
-Create a new `.html` file. Follow the existing pattern: fully self-contained, no external scripts or stylesheets, retro dark aesthetic. Add an entry to `README.md`.
+Create a new `.html` file inside `retro-games/`. Follow the existing pattern: fully self-contained, no external scripts or stylesheets, retro dark aesthetic. Add an entry to `retro-games/README.md`.
 
 ## Git
 

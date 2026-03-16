@@ -1,0 +1,55 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+  background: #fff;
+  border-right: 0.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.logo {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 20px 16px 16px;
+  border-bottom: 0.5px solid var(--border);
+  letter-spacing: -0.3px;
+}
+
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 24px;
+  max-width: 900px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    top: auto;
+    flex-direction: row;
+    border-right: none;
+    border-top: 0.5px solid var(--border);
+    z-index: 100;
+  }
+
+  .logo { display: none; }
+
+  .main {
+    margin-left: 0;
+    margin-bottom: 60px;
+    padding: 16px;
+  }
+}
