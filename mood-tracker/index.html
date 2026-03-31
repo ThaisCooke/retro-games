@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Skzoo Mood Tracker ✨</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#a78bfa">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mood Tracker">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <style>
+    /* ═══════════ RESET & ROOT ═══════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --max-width: 480px;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 4px 28px rgba(0,0,0,0.10);
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --bg: #fdf6ff;
+      --surface: #ffffff;
+      --surface2: #f5f0fa;
+      --border: #e8dff5;
+      --text: #2d1f4e;
+      --muted: #9580b8;
+      --success-color: #22c55e;
+      --danger-color: #ef4444;
+      /* character theme defaults */
+      --char-primary: #a78bfa;
+      --char-light: #ede9fe;
+      --char-dark: #5b21b6;
+      --char-gradient: linear-gradient(135deg, #a78bfa, #c4b5fd);
+    }
+
+    /* ═══════════ CHARACTER THEMES ═══════════ */
+    [data-character="WOLFCHAN"] {
+      --char-primary: #94a3b8;
+      --char-light: #f1f5f9;
+      --char-dark: #334155;
+      --char-gradient: linear-gradient(135deg, #64748b, #94a3b8);
+    }
+    [data-character="LEEBIT"] {
+      --char-primary: #c4b5fd;
+      --char-light: #f5f3ff;
+      --char-dark: #5b21b6;
+      --char-gradient: linear-gradient(135deg, #a78bfa, #c4b5fd);
+    }
+    [data-character="DWAEKKI"] {
+      --char-primary: #fbbf24;
+      --char-light: #fffbeb;
+      --char-dark: #92400e;
+      --char-gradient: linear-gradient(135deg, #f59e0b, #fbbf24);
+    }
+    [data-character="JINIRET"] {
+      --char-primary: #7dd3fc;
+      --char-light: #f0f9ff;
+      --char-dark: #075985;
+      --char-gradient: linear-gradient(135deg, #38bdf8, #7dd3fc);
+    }
+    [data-character="HANQUOKKA"] {
+      --char-primary: #fb923c;
+      --char-light: #fff7ed;
+      --char-dark: #9a3412;
+      --char-gradient: linear-gradient(135deg, #f97316, #fb923c);
+    }
+    [data-character="BBOKARI"] {
+      --char-primary: #fde047;
+      --char-light: #fefce8;
+      --char-dark: #713f12;
+      --char-gradient: linear-gradient(135deg, #facc15, #fde047);
+    }
+    [data-character="PUPPYM"] {
+      --char-primary: #f9a8d4;
+      --char-light: #fdf2f8;
+      --char-dark: #9d174d;
+      --char-gradient: linear-gradient(135deg, #f472b6, #f9a8d4);
+    }
+    [data-character="FOXNY"] {
+      --char-primary: #6ee7b7;
+      --char-light: #ecfdf5;
+      --char-dark: #065f46;
+      --char-gradient: linear-gradient(135deg, #34d399, #6ee7b7);
+    }
+
+    /* ═══════════ BASE ═══════════ */
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    /* ═══════════ CHARACTER SELECT SCREEN ═══════════ */
+    #characterSelectScreen {
+      width: 100%;
+      max-width: var(--max-width);
+      min-height: 100vh;
+      background: var(--surface);
+      padding: 2rem 1.25rem 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .select-header {
+      text-align: center;
+      padding-bottom: 0.5rem;
+    }
+
+    .select-header .big-emoji {
+      font-size: 3.5rem;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .select-header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .select-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    @media (max-width: 380px) {
+      .character-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .char-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.4rem;
+      border-radius: var(--radius-sm);
+      border: 2.5px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      gap: 0.2rem;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .char-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+      border-color: #a78bfa;
+    }
+
+    .char-card.selected {
+      border-color: var(--char-primary, #a78bfa);
+      background: var(--char-light, #ede9fe);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .char-card .c-emoji { font-size: 2rem; line-height: 1; }
+    .char-card .c-name { font-size: 0.65rem; font-weight: 800; color: var(--text); text-align: center; letter-spacing: 0.02em; }
+    .char-card .c-member { font-size: 0.58rem; color: var(--muted); text-align: center; }
+
+    /* ═══════════ APP SHELL ═══════════ */
+    #appShell {
+      width: 100%;
+      max-width: var(--max-width);
+      min-height: 100vh;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow);
+    }
+
+    /* ═══════════ HEADER / NAV ═══════════ */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--surface);
+      border-bottom: 3px solid var(--char-primary);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.3s;
+    }
+
+    .app-logo {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .app-nav {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    .nav-btn {
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav-btn:hover { border-color: var(--char-primary); color: var(--char-dark); }
+
+    .nav-btn.active {
+      background: var(--char-primary);
+      border-color: var(--char-primary);
+      color: var(--char-dark);
+    }
+
+    /* ═══════════ VIEWS ═══════════ */
+    .view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      padding: 1rem 1.25rem 2rem;
+      gap: 1rem;
+    }
+
+    .view.active { display: flex; }
+
+    /* ═══════════ CHARACTER STAGE ═══════════ */
+    .character-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem 0 0.25rem;
+      gap: 0.75rem;
+    }
+
+    .character-avatar {
+      font-size: 5rem;
+      line-height: 1;
+      animation: avatarBounce 2.2s ease-in-out infinite;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.15));
+      cursor: default;
+      transition: font-size 0.2s;
+    }
+
+    @keyframes avatarBounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-10px) rotate(-3deg); }
+      75% { transform: translateY(-6px) rotate(3deg); }
+    }
+
+    .speech-bubble {
+      position: relative;
+      background: var(--char-light);
+      border: 2.5px solid var(--char-primary);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.1rem;
+      max-width: 92%;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--text);
+      box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 7px solid transparent;
+      border-bottom-color: var(--char-primary);
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-bottom-color: var(--char-light);
+    }
+
+    #bubbleText {
+      transition: opacity 0.25s, transform 0.25s;
+    }
+
+    /* ═══════════ CHECK-IN CARD ═══════════ */
+    .checkin-card {
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      border: 1.5px solid var(--border);
+    }
+
+    .already-logged-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--char-light);
+      border: 2px solid var(--char-primary);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--char-dark);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    /* ═══════════ FORM ELEMENTS ═══════════ */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .form-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: -0.2rem;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239580b8' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      padding-right: 2.2rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: var(--char-primary);
+    }
+
+    .form-select:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .form-textarea {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font);
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.15s;
+    }
+
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--char-primary);
+    }
+
+    .form-textarea:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* ═══════════ MOOD CHIPS ═══════════ */
+    .mood-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .mood-chip {
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .mood-chip:hover:not([data-locked]) {
+      border-color: var(--char-primary);
+      color: var(--char-dark);
+    }
+
+    .mood-chip.selected {
+      background: var(--char-primary);
+      border-color: var(--char-primary);
+      color: var(--char-dark);
+      transform: scale(1.05);
+    }
+
+    .mood-chip[data-locked] {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    /* ═══════════ BUTTONS ═══════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      border: 2.5px solid transparent;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary {
+      background: var(--char-primary);
+      color: var(--char-dark);
+      border-color: var(--char-primary);
+    }
+
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+      padding: 0.4rem 0.85rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-ghost:hover { border-color: var(--char-primary); color: var(--char-dark); }
+
+    .btn-danger {
+      background: var(--danger-color);
+      color: #fff;
+      border-color: var(--danger-color);
+    }
+
+    .btn-full { width: 100%; }
+
+    .form-actions {
+      margin-top: 0.25rem;
+    }
+
+    /* ═══════════ SUCCESS MESSAGE ═══════════ */
+    .success-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem 1rem;
+      gap: 0.75rem;
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-avatar {
+      font-size: 5.5rem;
+      line-height: 1;
+      animation: celebrate 0.6s ease-out;
+    }
+
+    @keyframes celebrate {
+      0% { transform: scale(0.6) rotate(-10deg); }
+      60% { transform: scale(1.2) rotate(5deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* ═══════════ HISTORY VIEW ═══════════ */
+    .view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.5rem;
+    }
+
+    .view-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--char-light);
+      color: var(--char-dark);
+      border-radius: 999px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .history-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .history-table th {
+      background: var(--char-light);
+      color: var(--char-dark);
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      font-weight: 800;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .history-table td {
+      padding: 0.6rem 0.75rem;
+      border-top: 1.5px solid var(--border);
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    .history-table tr:hover td { background: var(--surface2); }
+
+    .mood-tag {
+      display: inline-block;
+      background: var(--char-light);
+      color: var(--char-dark);
+      border-radius: 999px;
+      padding: 0.1rem 0.5rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin: 1px;
+      white-space: nowrap;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .yes-badge { color: var(--success-color); font-weight: 800; }
+    .no-badge { color: var(--danger-color); font-weight: 800; }
+
+    .history-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════ SETTINGS VIEW ═══════════ */
+    .settings-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .settings-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .current-buddy {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--char-light);
+      border: 2px solid var(--char-primary);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .current-buddy .buddy-emoji { font-size: 2.2rem; }
+    .current-buddy .buddy-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .current-buddy .buddy-member { font-size: 0.78rem; color: var(--muted); }
+
+    .danger-zone {
+      margin-top: 0.5rem;
+      padding: 1rem;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .danger-zone-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--danger-color);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .danger-zone p {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* ═══════════ CONFIRM MODAL ═══════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+      animation: fadeIn 0.15s;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      max-width: 320px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      animation: slideUp 0.2s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal h3 { font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+    /* ═══════════ SCROLLBAR ═══════════ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════ CHARACTER SELECT SCREEN ═══════════ -->
+  <div id="characterSelectScreen">
+    <div class="select-header">
+      <div class="big-emoji">🌟</div>
+      <h1>Pick your Skzoo buddy!</h1>
+      <p>They'll check in with you every day ✨</p>
+    </div>
+    <div class="character-grid" id="selectGrid"></div>
+  </div>
+
+  <!-- ═══════════ APP SHELL ═══════════ -->
+  <div id="appShell" style="display:none">
+
+    <header class="app-header">
+      <div class="app-logo" id="appLogo">✨ Mood Tracker</div>
+      <nav class="app-nav">
+        <button class="nav-btn active" data-view="checkin" onclick="switchView('checkin')">Check-in</button>
+        <button class="nav-btn" data-view="history" onclick="switchView('history')">History</button>
+        <button class="nav-btn" data-view="settings" onclick="switchView('settings')">Settings</button>
+      </nav>
+    </header>
+
+    <!-- ── CHECK-IN VIEW ── -->
+    <div class="view active" id="checkinView">
+
+      <div class="character-stage">
+        <div class="character-avatar" id="charAvatar">🐺</div>
+        <div class="speech-bubble">
+          <p id="bubbleText">Loading...</p>
+        </div>
+      </div>
+
+      <div class="checkin-card" id="checkinCard">
+
+        <div class="already-logged-banner" id="alreadyLoggedBanner" style="display:none">
+          <span>✅ Already checked in today!</span>
+          <button class="btn btn-ghost" onclick="enableEditMode()">Edit</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">💊 Did you take your meds today?</label>
+          <select class="form-select" id="fieldMeds">
+            <option value="">-- Choose one --</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🏫 Is today a school day?</label>
+          <select class="form-select" id="fieldSchool">
+            <option value="">-- Choose one --</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">💭 How are you feeling today?</label>
+          <p class="form-hint">Tap all that apply!</p>
+          <div class="mood-chips" id="moodChips">
+            <button class="mood-chip" data-mood="Tired" onclick="toggleMoodChip(this)">😴 Tired</button>
+            <button class="mood-chip" data-mood="Focused" onclick="toggleMoodChip(this)">🎯 Focused</button>
+            <button class="mood-chip" data-mood="Excited" onclick="toggleMoodChip(this)">🎉 Excited</button>
+            <button class="mood-chip" data-mood="Giddy" onclick="toggleMoodChip(this)">😁 Giddy</button>
+            <button class="mood-chip" data-mood="Foggy" onclick="toggleMoodChip(this)">🌫️ Foggy</button>
+            <button class="mood-chip" data-mood="Mood Swings" onclick="toggleMoodChip(this)">🎢 Mood Swings</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📝 Anything else? <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <textarea class="form-textarea" id="fieldComments" placeholder="You can write anything here..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-full" id="submitBtn" onclick="submitCheckin()">
+            Save today's check-in! ✨
+          </button>
+        </div>
+
+      </div>
+
+      <!-- success state -->
+      <div class="success-message" id="successMessage" style="display:none">
+        <div class="success-avatar" id="successAvatar">🐺</div>
+        <div class="speech-bubble">
+          <p id="successText">Amazing job! 🎉</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── HISTORY VIEW ── -->
+    <div class="view" id="historyView">
+      <div class="view-header">
+        <h2 class="view-title">📋 Your history</h2>
+        <button class="btn btn-primary" onclick="downloadCSV()">Download CSV</button>
+      </div>
+      <div class="history-stats" id="historyStats"></div>
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Meds</th>
+              <th>School</th>
+              <th>Moods</th>
+              <th>Comments</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="history-empty" id="historyEmpty" style="display:none">
+          No check-ins yet — start with today! 🌟
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS VIEW ── -->
+    <div class="view" id="settingsView">
+      <h2 class="view-title">⚙️ Settings</h2>
+
+      <div class="settings-section">
+        <div class="settings-label">Your current buddy</div>
+        <div class="current-buddy" id="currentBuddy">
+          <div class="buddy-emoji" id="buddyEmoji">🐺</div>
+          <div>
+            <div class="buddy-name" id="buddyName">WOLFCHAN</div>
+            <div class="buddy-member" id="buddyMember">Bang Chan's wolf</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Switch buddy</div>
+        <div class="character-grid" id="settingsGrid"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="danger-zone">
+          <div class="danger-zone-label">⚠️ Danger zone</div>
+          <p>This will permanently delete all your check-in history. Only do this if you really mean it!</p>
+          <button class="btn btn-danger" onclick="confirmClearData()">Clear all data</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /appShell -->
+
+  <!-- Confirm modal (injected by JS) -->
+  <div id="modalContainer"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CHARACTERS
+// ═══════════════════════════════════════════════════════
+const CHARACTERS = {
+  WOLFCHAN: {
+    id: 'WOLFCHAN',
+    name: 'WOLFCHAN',
+    emoji: '🐺',
+    member: 'Bang Chan',
+    animal: 'wolf',
+    greetMorning: () => "Good morning! 🌅 Bang Chan says leaders start their day strong. Ready to check in with me?",
+    greetEvening: () => "Hey, you made it through the day! 🐺 I was rooting for you the whole time. Tell me how it went!",
+    greetNeutral: () => "Hey hey! 🐺 I'm always here when you need me. Let's do your check-in together, yeah?",
+    successMeds: "You took your meds! That's being responsible and taking care of yourself — WOLFCHAN is so proud! 🌟",
+    successNoMeds: "No meds today — that's okay. Just check in with a grown-up, alright? Tomorrow's a fresh start! 🐺💕",
+    successGeneral: "Check-in complete! You're amazing for keeping track of yourself. See you tomorrow! 🐺✨",
+  },
+  LEEBIT: {
+    id: 'LEEBIT',
+    name: 'LEEBIT',
+    emoji: '🐰',
+    member: 'Lee Know',
+    animal: 'bunny',
+    greetMorning: () => "Good morning~! 🐰 Did you sleep well? Lee Know always looks cool but honestly I missed you! Let's check in!",
+    greetEvening: () => "Oh, finally! I've been here all day waiting for you. 🐰 How did everything go? Tell me everything.",
+    greetNeutral: () => "Heyyy. I heard you were looking for me. 😏🐰 Just kidding — I'm happy you're here. Check-in time!",
+    successMeds: "Meds taken. Good. Very cool of you. Not that I was worried or anything. 🐰 (I was a little worried.)",
+    successNoMeds: "No meds today? It's okay, just let someone know. You're still doing great. 💕",
+    successGeneral: "Check-in done! See, that wasn't hard. 🐰 Same time tomorrow? I'll be here.",
+  },
+  DWAEKKI: {
+    id: 'DWAEKKI',
+    name: 'DWAEKKI',
+    emoji: '🐷',
+    member: 'Changbin',
+    animal: 'pig',
+    greetMorning: () => "GOOD MORNING!! 🐷💥 ARE YOU READY?! LET'S GOOO!! CHECK-IN TIME!! WOOOOO!!",
+    greetEvening: () => "YOOO!! You survived another day!! 🐷🔥 TELL ME EVERYTHING!! I AM HYPED TO HEAR IT!!",
+    greetNeutral: () => "HELLO BESTIE!! 🐷✨ I was literally just thinking about you!! CHECK-IN TIME LET'S GET IT!!",
+    successMeds: "MEDS TAKEN?! THAT'S MY HERO RIGHT THERE!! SO PROUD!! SO HYPED!! LET'S GOOO!! 💪🐷",
+    successNoMeds: "No meds is okay!! Tomorrow we crush it!! YOU'RE STILL AMAZING!! 🐷💕",
+    successGeneral: "CHECK-IN COMPLETE!! YOU'RE A LEGEND!! GO DRINK SOME WATER TOO!! 🐷🎉",
+  },
+  JINIRET: {
+    id: 'JINIRET',
+    name: 'JINIRET',
+    emoji: '🦦',
+    member: 'Hyunjin',
+    animal: 'ferret',
+    greetMorning: () => "Good morning 🌸 Today is a blank canvas, and you get to decide what colors to use. I'm excited to hear about it.",
+    greetEvening: () => "The day is winding down like a painting finishing its last stroke... 🎨 How did your masterpiece turn out today?",
+    greetNeutral: () => "Hello, lovely. 🌷 Take a little breath. I'm here. Ready for your check-in whenever you are.",
+    successMeds: "Taking care of yourself is its own kind of art. Beautiful choice. 🌸🦦",
+    successNoMeds: "Every day is different — that's what makes it interesting. Tomorrow is a new brushstroke. 💜",
+    successGeneral: "Thank you for sharing your day with me. Every feeling you have matters so much. See you tomorrow 🦦🌸",
+  },
+  HANQUOKKA: {
+    id: 'HANQUOKKA',
+    name: 'HAN QUOKKA',
+    emoji: '🦘',
+    member: 'Han',
+    animal: 'quokka',
+    greetMorning: () => "WAIT— is it morning already?! Time is fake!! HI HI HI!! 🦘💥 How are you?! I need to know RIGHT NOW!!",
+    greetEvening: () => "Okay okay okay — I have so many thoughts right now but first — HOW WAS YOUR DAY?! 🦘 Tell me everything, I'm listening!!",
+    greetNeutral: () => "Oh!! It's YOU!! I was literally JUST thinking about you no joke!! 🦘✨ Check-in time!! Let's go go go!!",
+    successMeds: "MEDS!! YES!! You're so responsible and I love that for you!! I would celebrate but I'd probably trip!! 🎉🦘",
+    successNoMeds: "No meds today is okay!! Breathe!! Tomorrow!! You've got this!! I believe in you SO MUCH!! 💕",
+    successGeneral: "I love you so much okay that's just the truth!! Thanks for checking in!! 🦘💕",
+  },
+  BBOKARI: {
+    id: 'BBOKARI',
+    name: 'BBOKARI',
+    emoji: '🐥',
+    member: 'Felix',
+    animal: 'chick',
+    greetMorning: () => "Good morning bestie!!! 🐥☀️ The sun is shining and so are YOU and I am just SO HAPPY to see you today!!",
+    greetEvening: () => "Hey gorgeous!! 🐥🌟 You made it through the whole day — that's already so amazing!! Tell me how you're doing!!",
+    greetNeutral: () => "Hiii!! 🐥✨ I'm SO excited you're here for your check-in!! You literally just made my whole day!! Let's go!!",
+    successMeds: "YES!! Taking your meds = self-love and BBOKARI is 100% here for it!! You're incredible!! 💛🐥",
+    successNoMeds: "Aw, no meds today — that's okay sunshine! Just let someone know. You're still my favorite!! 💕",
+    successGeneral: "You're so incredible, you know that?! I mean it!! See you tomorrow, sunshine!! 🐥🌻",
+  },
+  PUPPYM: {
+    id: 'PUPPYM',
+    name: 'PUPPYM',
+    emoji: '🐶',
+    member: 'Seungmin',
+    animal: 'puppy',
+    greetMorning: () => "Oh good morning! 🐶 You're up already? Look at you, being all responsible. Let's do this check-in, shall we?",
+    greetEvening: () => "There you are! 🐶 I was starting to think you forgot about me. (I knew you wouldn't.) How was your day?",
+    greetNeutral: () => "Check-in time! 🐶 And before you ask — yes, you have to do it. I'm watching you. (Lovingly.)",
+    successMeds: "Meds taken! See, that wasn't bad at all. I never doubted you. (I doubted you a tiny bit.) 💕🐶",
+    successNoMeds: "No meds today, huh. Okay, just make sure to tell someone. You're still my favorite. Don't tell the others. 🐶",
+    successGeneral: "Great job! You did it! I'm very proud and also I'll never admit how much I was rooting for you. 🐶✨",
+  },
+  FOXNY: {
+    id: 'FOXNY',
+    name: 'FOX.NY',
+    emoji: '🦊',
+    member: 'I.N',
+    animal: 'fennec fox',
+    greetMorning: () => "Good morning!! 🦊🌙 Did you sleep okay?! I hope you had the most amazing dreams!! I'm so glad it's a new day!!",
+    greetEvening: () => "Heyyy, I missed you today!! 🦊🥺 I kept thinking about you! Tell me everything about how your day went!!",
+    greetNeutral: () => "Hi!! I'm really really glad you're here. 🦊 Like genuinely. Check-in time — let's do it together, okay?",
+    successMeds: "You took your meds!! That is SO responsible and cool!! I look up to you so much!! 🥺🦊💕",
+    successNoMeds: "No meds today — that's okay, just check with a grown-up! You're still doing amazing!! 🦊💕",
+    successGeneral: "That was so great!! I'm SO happy you checked in with me!! See you tomorrow!! 🦊🌸",
+  },
+};
+
+const CHARACTER_ORDER = ['WOLFCHAN','LEEBIT','DWAEKKI','JINIRET','HANQUOKKA','BBOKARI','PUPPYM','FOXNY'];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const state = {
+  character: null,
+  logs: [],
+  currentView: 'checkin',
+};
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+const STORAGE_LOGS = 'moodTracker_logs';
+const STORAGE_CHAR = 'moodTracker_character';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_LOGS);
+    state.logs = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.logs)) state.logs = [];
+  } catch { state.logs = []; }
+  try {
+    state.character = localStorage.getItem(STORAGE_CHAR) || null;
+  } catch { state.character = null; }
+}
+
+function saveLogs() {
+  localStorage.setItem(STORAGE_LOGS, JSON.stringify(state.logs));
+}
+
+function saveCharacter(id) {
+  state.character = id;
+  localStorage.setItem(STORAGE_CHAR, id);
+}
+
+function clearAllData() {
+  localStorage.removeItem(STORAGE_LOGS);
+  localStorage.removeItem(STORAGE_CHAR);
+  state.logs = [];
+  state.character = null;
+}
+
+// ═══════════════════════════════════════════════════════
+// DATE UTILS
+// ═══════════════════════════════════════════════════════
+function getTodayKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function getHour() {
+  return new Date().getHours();
+}
+
+function formatDisplayDate(dateStr) {
+  const parts = dateStr.split('-').map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARACTER THEME
+// ═══════════════════════════════════════════════════════
+function applyCharacterTheme(id) {
+  document.body.setAttribute('data-character', id);
+  const char = CHARACTERS[id];
+  document.getElementById('charAvatar').textContent = char.emoji;
+  document.getElementById('successAvatar').textContent = char.emoji;
+  document.getElementById('appLogo').textContent = char.emoji + ' Mood Tracker';
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARACTER GRIDS
+// ═══════════════════════════════════════════════════════
+function renderCharacterGrid(containerId, clickFn) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = CHARACTER_ORDER.map(id => {
+    const c = CHARACTERS[id];
+    const isSelected = state.character === id;
+    return `<div class="char-card${isSelected ? ' selected' : ''}" onclick="${clickFn}('${id}')" title="${c.name} — ${c.member}'s ${c.animal}">
+      <div class="c-emoji">${c.emoji}</div>
+      <div class="c-name">${c.name}</div>
+      <div class="c-member">${c.member}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectCharacter(id) {
+  saveCharacter(id);
+  applyCharacterTheme(id);
+  document.getElementById('characterSelectScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  initCheckinView();
+  renderSettings();
+}
+
+function changeCharacter(id) {
+  saveCharacter(id);
+  applyCharacterTheme(id);
+  renderSettings();
+  showBubbleText(CHARACTERS[id].greetNeutral());
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function switchView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(viewId + 'View').classList.add('active');
+  document.querySelector(`.nav-btn[data-view="${viewId}"]`).classList.add('active');
+  state.currentView = viewId;
+  if (viewId === 'history') renderHistory();
+  if (viewId === 'settings') renderSettings();
+  if (viewId === 'checkin') initCheckinView();
+}
+
+// ═══════════════════════════════════════════════════════
+// DIALOGUE
+// ═══════════════════════════════════════════════════════
+function getGreeting() {
+  const h = getHour();
+  const char = CHARACTERS[state.character];
+  if (h < 12) return char.greetMorning();
+  if (h < 18) return char.greetNeutral();
+  return char.greetEvening();
+}
+
+function showBubbleText(text) {
+  const el = document.getElementById('bubbleText');
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(5px)';
+  setTimeout(() => {
+    el.textContent = text;
+    el.style.transition = 'opacity 0.3s, transform 0.3s';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }, 160);
+}
+
+// ═══════════════════════════════════════════════════════
+// CHECK-IN
+// ═══════════════════════════════════════════════════════
+function getTodayLog() {
+  return state.logs.find(l => l.date === getTodayKey()) || null;
+}
+
+function initCheckinView() {
+  document.getElementById('checkinCard').style.display = 'flex';
+  document.getElementById('checkinCard').style.flexDirection = 'column';
+  document.getElementById('successMessage').style.display = 'none';
+  showBubbleText(getGreeting());
+
+  const todayLog = getTodayLog();
+  if (todayLog) {
+    populateForm(todayLog);
+    setFormLocked(true);
+    document.getElementById('alreadyLoggedBanner').style.display = 'flex';
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '✅ Already saved today!';
+    btn.disabled = true;
+  } else {
+    clearForm();
+    setFormLocked(false);
+    document.getElementById('alreadyLoggedBanner').style.display = 'none';
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = "Save today's check-in! ✨";
+    btn.disabled = false;
+    btn.style.background = '';
+    btn.style.borderColor = '';
+  }
+}
+
+function enableEditMode() {
+  setFormLocked(false);
+  document.getElementById('alreadyLoggedBanner').style.display = 'none';
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Update today! ✏️';
+  btn.disabled = false;
+  btn.style.background = '';
+  btn.style.borderColor = '';
+  showBubbleText("Let's update it! No worries 📝 " + CHARACTERS[state.character].emoji);
+}
+
+function toggleMoodChip(el) {
+  if (el.dataset.locked) return;
+  el.classList.toggle('selected');
+}
+
+function populateForm(log) {
+  document.getElementById('fieldMeds').value = log.tookMeds || '';
+  document.getElementById('fieldSchool').value = log.schoolDay || '';
+  const moods = log.moods || [];
+  document.querySelectorAll('.mood-chip').forEach(chip => {
+    chip.classList.toggle('selected', moods.includes(chip.dataset.mood));
+  });
+  document.getElementById('fieldComments').value = log.comments || '';
+}
+
+function clearForm() {
+  document.getElementById('fieldMeds').value = '';
+  document.getElementById('fieldSchool').value = '';
+  document.querySelectorAll('.mood-chip').forEach(c => {
+    c.classList.remove('selected');
+    delete c.dataset.locked;
+  });
+  document.getElementById('fieldComments').value = '';
+}
+
+function setFormLocked(locked) {
+  document.getElementById('fieldMeds').disabled = locked;
+  document.getElementById('fieldSchool').disabled = locked;
+  document.getElementById('fieldComments').disabled = locked;
+  document.querySelectorAll('.mood-chip').forEach(c => {
+    if (locked) {
+      c.dataset.locked = '1';
+    } else {
+      delete c.dataset.locked;
+    }
+  });
+}
+
+function submitCheckin() {
+  const meds = document.getElementById('fieldMeds').value;
+  const school = document.getElementById('fieldSchool').value;
+  const moods = [...document.querySelectorAll('.mood-chip.selected')].map(el => el.dataset.mood);
+  const comments = document.getElementById('fieldComments').value.trim();
+
+  if (!meds) { flashError('Please choose Yes or No for meds! 💊'); return; }
+  if (!school) { flashError('Please choose Yes or No for school! 🏫'); return; }
+
+  const entry = {
+    date: getTodayKey(),
+    tookMeds: meds,
+    schoolDay: school,
+    moods,
+    comments,
+    character: state.character,
+  };
+
+  const idx = state.logs.findIndex(l => l.date === entry.date);
+  if (idx !== -1) state.logs[idx] = entry;
+  else state.logs.push(entry);
+  saveLogs();
+
+  showSuccessMessage(entry);
+}
+
+function showSuccessMessage(log) {
+  document.getElementById('checkinCard').style.display = 'none';
+  const char = CHARACTERS[state.character];
+  let msg = log.tookMeds === 'Yes' ? char.successMeds : char.successNoMeds;
+  if (!msg) msg = char.successGeneral;
+  document.getElementById('successText').textContent = msg;
+  document.getElementById('successMessage').style.display = 'flex';
+  showBubbleText(char.successGeneral);
+
+  setTimeout(() => {
+    document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('checkinCard').style.display = 'flex';
+    document.getElementById('checkinCard').style.flexDirection = 'column';
+    initCheckinView();
+  }, 4000);
+}
+
+function flashError(msg) {
+  const btn = document.getElementById('submitBtn');
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  btn.style.background = 'var(--danger-color)';
+  btn.style.borderColor = 'var(--danger-color)';
+  btn.style.color = '#fff';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 2800);
+}
+
+// ═══════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════
+function renderHistory() {
+  const tbody = document.getElementById('historyBody');
+  const empty = document.getElementById('historyEmpty');
+  const statsEl = document.getElementById('historyStats');
+  const sorted = [...state.logs].sort((a, b) => b.date.localeCompare(a.date));
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    statsEl.innerHTML = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  // stats
+  const total = sorted.length;
+  const medsDays = sorted.filter(l => l.tookMeds === 'Yes').length;
+  statsEl.innerHTML = `
+    <div class="stat-pill">${total} day${total !== 1 ? 's' : ''} logged</div>
+    <div class="stat-pill">💊 Meds: ${medsDays}/${total} days</div>
+  `;
+
+  tbody.innerHTML = sorted.map(log => {
+    const moodsHtml = (log.moods || []).length
+      ? log.moods.map(m => `<span class="mood-tag">${m}</span>`).join(' ')
+      : '<span style="color:var(--muted)">—</span>';
+    const medsHtml = log.tookMeds === 'Yes'
+      ? `<span class="yes-badge">✅ Yes</span>`
+      : `<span class="no-badge">❌ No</span>`;
+    const schoolHtml = log.schoolDay === 'Yes'
+      ? `<span class="yes-badge">🏫 Yes</span>`
+      : `<span style="color:var(--muted)">🏠 No</span>`;
+    return `<tr>
+      <td style="white-space:nowrap;font-weight:600">${formatDisplayDate(log.date)}</td>
+      <td>${medsHtml}</td>
+      <td>${schoolHtml}</td>
+      <td>${moodsHtml}</td>
+      <td style="max-width:150px;font-size:0.75rem;color:var(--muted)">${esc(log.comments || '—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════════════════
+function downloadCSV() {
+  if (state.logs.length === 0) {
+    alert("No data to export yet! Check in a few times first 🌟");
+    return;
+  }
+  const header = ['Date', 'Took Meds', 'School Day', 'Moods', 'Comments', 'Character'];
+  const rows = [...state.logs]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(log => [
+      log.date,
+      log.tookMeds || '',
+      log.schoolDay || '',
+      (log.moods || []).join('; '),
+      log.comments || '',
+      log.character || '',
+    ]);
+
+  const csv = [header, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mood-tracker-${getTodayKey()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function renderSettings() {
+  if (!state.character) return;
+  const char = CHARACTERS[state.character];
+  document.getElementById('buddyEmoji').textContent = char.emoji;
+  document.getElementById('buddyName').textContent = char.name;
+  document.getElementById('buddyMember').textContent = `${char.member}'s ${char.animal}`;
+  renderCharacterGrid('settingsGrid', 'changeCharacter');
+}
+
+function confirmClearData() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'confirmModal';
+  modal.innerHTML = `
+    <div class="modal">
+      <h3>⚠️ Clear all data?</h3>
+      <p>This will permanently delete all your check-in history and reset the app. This cannot be undone!</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="doResetApp()">Yes, clear everything</button>
+      </div>
+    </div>`;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function closeModal() {
+  const m = document.getElementById('confirmModal');
+  if (m) m.remove();
+}
+
+function doResetApp() {
+  closeModal();
+  clearAllData();
+  document.getElementById('appShell').style.display = 'none';
+  document.body.removeAttribute('data-character');
+  renderCharacterGrid('selectGrid', 'selectCharacter');
+  document.getElementById('characterSelectScreen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ═══════════════════════════════════════════════════════
+// SERVICE WORKER REGISTRATION
+// ═══════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(function init() {
+  loadData();
+  renderCharacterGrid('selectGrid', 'selectCharacter');
+
+  if (state.character && CHARACTERS[state.character]) {
+    document.getElementById('characterSelectScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'flex';
+    applyCharacterTheme(state.character);
+    initCheckinView();
+    renderSettings();
+  } else {
+    document.getElementById('characterSelectScreen').style.display = 'flex';
+    document.getElementById('appShell').style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>
